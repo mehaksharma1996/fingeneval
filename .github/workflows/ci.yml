@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements-ci.txt
+      - run: ruff format --check src tests
+      - run: ruff check src tests
+      - run: mypy src/enterprise
+      - run: pytest -q --cov=src --cov-report=term-missing
+      - run: bandit -q -c pyproject.toml -r src
+      - run: pip-audit -r requirements-api.txt
+      - run: alembic upgrade head
+      - run: alembic check
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+
+  codeql:
+    runs-on: ubuntu-latest
+    strategy: { matrix: { language: [python, javascript-typescript] } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with: { languages: "${{ matrix.language }}" }
+      - uses: github/codeql-action/analyze@v3
+
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with: { context: ., load: true, tags: fingeneval-api:ci }
+      - uses: docker/build-push-action@v6
+        with: { context: frontend, load: true, tags: fingeneval-web:ci }
+      - uses: aquasecurity/trivy-action@0.28.0
+        with: { image-ref: fingeneval-api:ci, severity: HIGH,CRITICAL, exit-code: "1" }

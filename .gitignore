@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-tmp/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+fingeneval.db
+*.db-shm
+*.db-wal
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+reports/generated/

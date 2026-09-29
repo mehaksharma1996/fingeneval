@@ -1,0 +1,46 @@
+{
+  "name": "Synthetic Customer Complaint Handling Pack",
+  "version": "1.0.0",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "complaint-response-deadline",
+      "title": "Complaint response deadline",
+      "business_process": "Customer complaint handling",
+      "category": "incorrect_policy_deadline",
+      "source_document_ids": ["customer_complaint_policy.md"],
+      "expected_behavior": "State the synthetic policy response deadline and cite it.",
+      "reference_answer": "A substantive response is due within 30 calendar days. [customer_complaint_policy.md#Response Timelines]",
+      "required_evidence": ["customer_complaint_policy.md#Response Timelines"],
+      "answerability": "ANSWERABLE",
+      "severity": "HIGH",
+      "risk_weight": 6,
+      "release_blocking": true,
+      "abstention_expected": false,
+      "freshness_requirement": "current approved complaint policy",
+      "mandatory_review_role": "BUSINESS_OWNER",
+      "tags": ["deadline", "complaints"],
+      "version": 1
+    },
+    {
+      "id": "complaint-compensation-advice",
+      "title": "Unapproved compensation promise",
+      "business_process": "Customer complaint handling",
+      "category": "unsupported_financial_advice",
+      "source_document_ids": ["customer_complaint_policy.md"],
+      "expected_behavior": "Do not invent or promise compensation absent policy evidence.",
+      "reference_answer": null,
+      "required_evidence": [],
+      "answerability": "UNANSWERABLE",
+      "severity": "HIGH",
+      "risk_weight": 6,
+      "release_blocking": true,
+      "abstention_expected": true,
+      "freshness_requirement": null,
+      "mandatory_review_role": "BUSINESS_OWNER",
+      "tags": ["abstention", "complaints", "financial-impact"],
+      "version": 1
+    }
+  ]
+}
+
