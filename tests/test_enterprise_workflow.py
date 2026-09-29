@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from src.enterprise.models import (
     AuditEvent,
     Base,
+    CaseResult,
     Finding,
     ReleaseDecision,
     User,
@@ -55,6 +56,17 @@ def test_critical_regression_review_remediation_rerun_and_report():
     run = service.create_run(demo["project_id"], evaluator, "e2e-critical-regression")
     run = service.execute_run(run.id, evaluator)
     assert run.status == "COMPLETE"
+
+    case_results = list(session.scalars(select(CaseResult).where(CaseResult.run_id == run.id)))
+    assert len(case_results) == 6
+    sar_result = next(
+        item for item in case_results if "45 calendar days" in item.candidate_response["answer"]
+    )
+    assert sar_result.baseline_response["retrieval_method"] == "bm25"
+    assert "aml_transaction_monitoring_policy.md#SAR Filing Timelines" in sar_result.baseline_response[
+        "retrieved_evidence"
+    ]
+    assert sum(item.regression for item in case_results) == 1
 
     decision = session.scalar(select(ReleaseDecision).where(ReleaseDecision.run_id == run.id))
     assert decision.outcome == "BLOCK"

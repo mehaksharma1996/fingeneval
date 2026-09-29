@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 
 import numpy as np
-from rank_bm25 import BM25Okapi
+from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
 from .chunking import DocumentChunk, chunk_documents
 from .document_loader import load_documents
@@ -93,7 +93,7 @@ class VectorRetriever:
 
     def __init__(self, chunks: list[DocumentChunk], model_name: str | None = None) -> None:
         """Embed chunks and build an exact L2 FAISS index."""
-        import faiss
+        import faiss  # type: ignore[import-not-found]
         from sentence_transformers import SentenceTransformer
 
         self.chunks = chunks

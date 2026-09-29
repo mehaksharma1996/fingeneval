@@ -6,7 +6,6 @@ from sqlalchemy import engine_from_config, pool
 from src.enterprise.config import enterprise_settings
 from src.enterprise.models import Base
 
-
 config = context.config
 config.set_main_option("sqlalchemy.url", enterprise_settings.database_url.replace("%", "%%"))
 if config.config_file_name:
@@ -42,4 +41,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

@@ -473,10 +473,22 @@ export default function App() {
                 <div>
                   <span className="label">Baseline response</span>
                   <p>{regressions[0]?.baseline_response.answer}</p>
+                  <small>
+                    Retrieved via {regressions[0]?.baseline_response.retrieval_method ?? "unknown"}
+                  </small>
+                  {regressions[0]?.baseline_response.retrieved_evidence?.map((item) => (
+                    <code key={`baseline-${item}`}>{item}</code>
+                  ))}
                 </div>
                 <div className="failed">
                   <span className="label">Candidate response</span>
                   <p>{regressions[0]?.candidate_response.answer}</p>
+                  <small>
+                    Retrieved via {regressions[0]?.candidate_response.retrieval_method ?? "unknown"}
+                  </small>
+                  {regressions[0]?.candidate_response.retrieved_evidence?.map((item) => (
+                    <code key={`candidate-${item}`}>{item}</code>
+                  ))}
                 </div>
               </div>
               <div className="evidence">

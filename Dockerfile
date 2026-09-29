@@ -14,8 +14,8 @@ COPY alembic.ini ./
 COPY migrations ./migrations
 COPY src ./src
 COPY data/packs ./data/packs
+COPY data/docs ./data/docs
 RUN mkdir -p /data/reports && chown -R app:app /app /data
 USER app
 EXPOSE 8000
-CMD ["uvicorn", "src.enterprise.api:app", "--host", "0.0.0.0", "--port", "8000"]
-
+CMD ["sh", "-c", "python -m alembic upgrade head && exec uvicorn src.enterprise.api:app --host 0.0.0.0 --port 8000"]

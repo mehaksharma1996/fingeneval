@@ -29,16 +29,20 @@ React/TypeScript workflow UI
             |
   application service + controlled agent graph
             |
- deterministic evaluation + versioned release policy
+ approved documents -> section chunks -> BM25 retrieval
+            |
+ deterministic local generation + response comparison
+            |
+ versioned deterministic release policy
             |
  SQLAlchemy repositories -- SQLite local / PostgreSQL production target
             |
  local object storage -- S3-compatible production target
 ```
 
-The original Streamlit retrieval inspector remains available as a legacy engineering tool. The product workflow is the React application and FastAPI service. The original 45-question retrieval benchmark, retrievers, lexical metrics, Gemini adapter, and saved artifacts are preserved.
+The React/FastAPI product now reuses the shared document loader, section chunker, and BM25 retriever for every enterprise baseline/candidate response. The original Streamlit inspector remains available as an engineering surface for comparing BM25, vector, hybrid, and reranked retrieval over the larger 45-question benchmark.
 
-See [architecture](docs/architecture.md), [API](docs/api.md), [threat model](docs/threat-model.md), and [deployment](docs/deployment.md).
+See the [end-to-end workflow](docs/end-to-end-workflow.md), [architecture](docs/architecture.md), [API](docs/api.md), [threat model](docs/threat-model.md), and [deployment](docs/deployment.md).
 
 ## Run locally without paid credentials
 
@@ -79,7 +83,7 @@ Open `http://localhost:8080`. API documentation is at `http://localhost:8000/doc
 ## Demo flow
 
 1. Load the synthetic AML project, registered baseline/candidate, approved dataset, and release policy.
-2. Start the comparison. Local eager execution persists all six case results.
+2. Start the comparison. Each case queries the approved policy corpus through BM25 before the credential-free deterministic generator produces baseline and candidate responses. Local eager execution persists all six case results and their retrieved evidence.
 3. Open **Finding detail** to compare the correct 30-day baseline with the candidate's unsupported 45-day deadline and inspect the authoritative evidence identifier.
 4. Open **Release decision** to see every rule and the rules that caused `BLOCK`.
 5. Optionally record the synthetic compliance override; the computed decision remains immutable while the effective decision records the human action.
@@ -121,7 +125,7 @@ Copy `.env.example` to `.env` and use placeholders only. Core enterprise setting
 
 ## Repository map
 
-- `src/enterprise/`: domain, policy engine, controlled agents, providers, persistence, jobs, API, authorization, observability, reports
+- `src/enterprise/`: domain, policy engine, controlled agents, RAG-backed local provider, persistence, jobs, API, authorization, observability, reports
 - `frontend/`: accessible React/TypeScript workflow UI
 - `data/packs/`: reusable AML and complaint-handling evaluation packs
 - `src/`: preserved retrieval/evaluation harness
@@ -136,7 +140,7 @@ Copy `.env.example` to `.env` and use placeholders only. Core enterprise setting
 - Local authentication uses a synthetic `X-User-Id` boundary. Production requires OIDC/SAML validation, short-lived tokens, and centralized policy enforcement.
 - Tenant IDs and tenant-filtered queries are implemented; PostgreSQL row-level security and independent penetration testing remain required for true multi-tenant production.
 - Eager and threaded workers are development adapters. Production needs a durable queue, leases, heartbeats, distributed cancellation, and dead-letter recovery.
-- The deterministic provider proves workflow behavior, not real model quality. The legacy lexical metrics cannot reliably detect negation or subtle semantic errors and need calibrated NLI/LLM judging plus human labels.
+- The local provider executes real BM25 retrieval but uses deterministic fixture generation so the workflow remains credential-free. It proves retrieval-to-governance integration, not production model quality. Production generation still needs an approved hosted-model adapter and calibrated semantic judging.
 - Local reports use the filesystem. S3-compatible storage, retention enforcement, legal hold, deletion verification, and tamper-evident audit export are documented production work.
 - The included load test is a configuration only; no scale result is claimed.
 - Generic project/dataset authoring is API/domain work in progress; the completed vertical slice loads the approved AML demonstration project.

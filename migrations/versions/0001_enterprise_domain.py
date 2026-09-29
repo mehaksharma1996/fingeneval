@@ -8,7 +8,6 @@ from alembic import op
 
 from src.enterprise.models import Base
 
-
 revision = "0001_enterprise_domain"
 down_revision = None
 branch_labels = None

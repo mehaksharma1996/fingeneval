@@ -30,8 +30,8 @@ flowchart LR
 | Persistence | SQLAlchemy + SQLite | PostgreSQL with backups, encryption, and row-level security |
 | Execution | Eager or local thread pool | Durable queue such as Temporal, Celery, or managed workflow service |
 | Reports | Local object-storage adapter | Versioned S3-compatible storage with retention controls |
-| Providers | Deterministic local adapter | Approved model endpoints through private networking where available |
-| Retrieval harness | Preserved BM25/vector/hybrid/reranker modules | Swappable vector store and document service |
+| Providers | Retrieval-grounded deterministic local adapter | Approved model endpoints through private networking where available |
+| Retrieval | Shared document loader, section chunker, and BM25 index | Swappable vector store and document service |
 | Observability | JSON logs, correlation/run IDs, agent traces, metrics endpoint | OpenTelemetry collector, managed metrics/logs/traces, SIEM export |
 
 ## Domain and ownership
@@ -80,11 +80,12 @@ Pydantic validates every output before persistence. Each step has a five-second 
 1. An authenticated tenant user calls the API; the API resolves identity and role.
 2. Tenant ID comes from the trusted identity record, never from request payloads.
 3. The service loads only tenant-owned project/version/dataset/policy rows.
-4. Workers call a provider adapter with one approved case and system configuration.
-5. Deterministic checks compare the two responses and validate assertions/citations.
-6. Case results and errors commit before the decision is computed.
-7. Policy results list each triggered rule and evidence identifier.
-8. Authorized human actions append approval and audit rows.
+4. Workers restrict retrieval to the case's approved source documents and query the shared BM25 index.
+5. The local provider records retrieved evidence and generates a deterministic baseline/candidate response; a production adapter can replace generation.
+6. Deterministic checks compare the two responses and validate assertions/citations.
+7. Case results and errors commit before the decision is computed.
+8. Policy results list each triggered rule and evidence identifier.
+9. Authorized human actions append approval and audit rows.
 
 Untrusted boundaries are the browser, uploads, model providers, source documents, generated output, webhooks, and future tools. Database, audit, and policy services remain inside the protected application boundary.
 

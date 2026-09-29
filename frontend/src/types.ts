@@ -49,12 +49,18 @@ export interface CaseResult {
   baseline_response: {
     answer: string;
     citations: string[];
+    retrieved_evidence?: string[];
+    retrieval_method?: string;
+    generation_mode?: string;
     latency_ms: number;
     estimated_cost_usd: number;
   };
   candidate_response: {
     answer: string;
     citations: string[];
+    retrieved_evidence?: string[];
+    retrieval_method?: string;
+    generation_mode?: string;
     latency_ms: number;
     estimated_cost_usd: number;
   };

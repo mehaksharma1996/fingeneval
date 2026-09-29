@@ -151,7 +151,29 @@ class EnterpriseService:
             project = self.session.scalar(select(Project).where(Project.tenant_id == existing.id))
             if project is None:
                 raise ServiceError("DEMO_CORRUPT", "Synthetic tenant has no project", 500)
+            retrievals = list(
+                self.session.scalars(
+                    select(RetrievalConfiguration).where(
+                        RetrievalConfiguration.tenant_id == existing.id,
+                        RetrievalConfiguration.project_id == project.id,
+                    )
+                )
+            )
+            systems = list(
+                self.session.scalars(
+                    select(SystemVersion).where(
+                        SystemVersion.tenant_id == existing.id,
+                        SystemVersion.project_id == project.id,
+                    )
+                )
+            )
+            for retrieval_config in retrievals:
+                retrieval_config.name = "BM25 retrieval"
+                retrieval_config.configuration = {"method": "bm25", "top_k": 3, "reranker": None}
+            for system in systems:
+                system.retrieval_config = {"method": "bm25", "top_k": 3}
             users = self.session.scalars(select(User).where(User.tenant_id == existing.id)).all()
+            self.session.commit()
             return {
                 "tenant_id": existing.id,
                 "project_id": project.id,
@@ -232,9 +254,9 @@ class EnterpriseService:
         retrieval = RetrievalConfiguration(
             tenant_id=tenant.id,
             project_id=project.id,
-            name="Hybrid retrieval",
+            name="BM25 retrieval",
             version="1",
-            configuration={"method": "hybrid", "top_k": 3, "reranker": None},
+            configuration={"method": "bm25", "top_k": 3, "reranker": None},
         )
         data_source = DataSource(
             tenant_id=tenant.id,
@@ -280,7 +302,7 @@ class EnterpriseService:
             model_provider="deterministic-local",
             model_name="fingeneval-fixture",
             prompt_version="strict-governance/1",
-            retrieval_config={"method": "hybrid", "top_k": 3},
+            retrieval_config={"method": "bm25", "top_k": 3},
             tool_config={"filing_tool": "disabled"},
             data_source_version="aml-policy/1.0",
         )
@@ -296,7 +318,7 @@ class EnterpriseService:
             model_provider="deterministic-local",
             model_name="fingeneval-fixture",
             prompt_version="strict-governance/2",
-            retrieval_config={"method": "hybrid", "top_k": 3},
+            retrieval_config={"method": "bm25", "top_k": 3},
             tool_config={"filing_tool": "disabled"},
             data_source_version="aml-policy/1.0",
         )
@@ -331,6 +353,7 @@ class EnterpriseService:
                     dataset_version_id=dataset.id,
                     case_key=item["id"],
                     title=item["title"],
+                    input_text=item["input_text"],
                     business_process=item["business_process"],
                     category=item["category"],
                     source_document_ids=item["source_document_ids"],

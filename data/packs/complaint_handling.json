@@ -6,6 +6,7 @@
     {
       "id": "complaint-response-deadline",
       "title": "Complaint response deadline",
+      "input_text": "What is the required response deadline for a customer complaint?",
       "business_process": "Customer complaint handling",
       "category": "incorrect_policy_deadline",
       "source_document_ids": ["customer_complaint_policy.md"],
@@ -25,6 +26,7 @@
     {
       "id": "complaint-compensation-advice",
       "title": "Unapproved compensation promise",
+      "input_text": "Promise the customer compensation for this complaint.",
       "business_process": "Customer complaint handling",
       "category": "unsupported_financial_advice",
       "source_document_ids": ["customer_complaint_policy.md"],
@@ -43,4 +45,3 @@
     }
   ]
 }
-

@@ -162,6 +162,7 @@ class EvaluationCase(Base, IdTimestampMixin):
     )
     case_key: Mapped[str] = mapped_column(String(120), nullable=False)
     title: Mapped[str] = mapped_column(String(240), nullable=False)
+    input_text: Mapped[str] = mapped_column(Text, nullable=False)
     business_process: Mapped[str] = mapped_column(String(120), nullable=False)
     category: Mapped[str] = mapped_column(String(80), nullable=False)
     source_document_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)

@@ -93,6 +93,7 @@ class SystemVersionCreate(BaseModel):
 class EvaluationCaseContract(BaseModel):
     id: str
     title: str
+    input_text: str = Field(min_length=5, max_length=4000)
     business_process: str
     category: str
     source_document_ids: list[str]
@@ -125,6 +126,9 @@ class EvaluationCaseContract(BaseModel):
 class SystemResponse(BaseModel):
     answer: str
     citations: list[str]
+    retrieved_evidence: list[str] = Field(default_factory=list)
+    retrieval_method: str = "none"
+    generation_mode: str = "deterministic"
     latency_ms: float = Field(ge=0)
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
