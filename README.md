@@ -93,6 +93,14 @@ python -m src.run_integrity results/retrieval_only_topk3
 
 The validator rejects incomplete matrices, duplicate benchmark keys, undeclared generation modes, dataset-fingerprint drift, metadata/count mismatches, and answer metrics populated on non-LLM rows. Its status distinguishes complete retrieval-only, complete generation, partial generation, failed generation, mixed-mode, invalid, and replayed evidence.
 
+The lexical answer metrics also have a versioned adversarial calibration packet. It deliberately withholds performance figures until required human labels are adjudicated:
+
+```powershell
+python -m src.calibration
+```
+
+See [docs/calibration-protocol.md](docs/calibration-protocol.md) for the review rubric and fail-closed threshold-change policy.
+
 ## Saved results
 
 Committed result folders are evidence from actual runs, not illustrative numbers:
@@ -111,6 +119,7 @@ Exact reproduction commands and known provenance limitations are documented in [
 - `src/retrievers.py`: BM25, vector, hybrid, and reranked retrieval
 - `src/llm.py`: optional Gemini generation, prompts, retries, and rate limiting
 - `src/metrics.py`: pure retrieval and answer metrics
+- `src/calibration.py`: human-label calibration validation and disagreement analysis
 - `src/evaluator.py`: benchmark orchestration, timing, resume support, and saved runs
 - `src/report_generator.py`: deterministic summaries and deployment gates
 - `src/run_integrity.py`: saved-run validation and evidence classification

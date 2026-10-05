@@ -25,6 +25,8 @@ jobs:
           python -m src.run_integrity
           results/retrieval_only_topk3
           results/gemini_strict_topk3
+      - name: Validate calibration packet
+        run: python -m src.calibration --validate-only
       - run: bandit -q -c pyproject.toml -r src
       - run: pip-audit -r requirements-api.txt
       - run: alembic upgrade head

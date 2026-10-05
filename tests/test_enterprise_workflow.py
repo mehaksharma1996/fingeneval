@@ -63,9 +63,10 @@ def test_critical_regression_review_remediation_rerun_and_report():
         item for item in case_results if "45 calendar days" in item.candidate_response["answer"]
     )
     assert sar_result.baseline_response["retrieval_method"] == "bm25"
-    assert "aml_transaction_monitoring_policy.md#SAR Filing Timelines" in sar_result.baseline_response[
-        "retrieved_evidence"
-    ]
+    assert (
+        "aml_transaction_monitoring_policy.md#SAR Filing Timelines"
+        in sar_result.baseline_response["retrieved_evidence"]
+    )
     assert sum(item.regression for item in case_results) == 1
 
     decision = session.scalar(select(ReleaseDecision).where(ReleaseDecision.run_id == run.id))

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "calibration_version": "v1",
+  "evaluator_version": "lexical-proxies-v1",
+  "annotation_file": "calibration_cases.csv",
+  "annotation_sha256_12": "PENDING",
+  "dataset_path": "data/eval/test_questions.csv",
+  "dataset_sha256_12": "3a8606869041",
+  "selection": "Twelve controlled cases spanning correct answers, negation, wrong numbers, missing and invalid citations, unsupported additions, correct abstention, hallucinated unanswerable answers, and false refusal.",
+  "thresholds": {
+    "contextual_recall": 0.8,
+    "faithfulness_proxy": 0.85,
+    "citation_coverage": 0.9,
+    "citation_validity": 1.0,
+    "answer_correctness_proxy": 0.8
+  },
+  "threshold_change": null,
+  "judge": {
+    "enabled": false,
+    "status": "not_run",
+    "configuration": null,
+    "reason": "The v1 packet is credential-free. A future judge must be versioned and advisory."
+  }
+}
