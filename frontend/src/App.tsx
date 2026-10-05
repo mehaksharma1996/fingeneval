@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
-import type { Dashboard, DemoContext, Finding, RunDetail } from "./types";
+import type {
+  Dashboard,
+  DemoContext,
+  Finding,
+  RunDetail,
+  SystemVersion,
+} from "./types";
 
 const views = [
   "Dashboard",
@@ -25,6 +31,60 @@ function Pill({ value }: { value: string }) {
 
 function Empty({ children }: { children: string }) {
   return <div className="empty">{children}</div>;
+}
+
+function displayMethod(method?: string) {
+  return method ? method.replaceAll("_", " ").toUpperCase() : "Not configured";
+}
+
+function displayTools(tools: Record<string, unknown>) {
+  const entries = Object.entries(tools);
+  if (!entries.length) return "None";
+  return entries
+    .map(([name, value]) => `${name.replaceAll("_", " ")}: ${String(value)}`)
+    .join(", ");
+}
+
+export function SystemVersionCard({
+  label,
+  system,
+  candidate = false,
+}: {
+  label: string;
+  system?: SystemVersion;
+  candidate?: boolean;
+}) {
+  if (!system) {
+    return (
+      <Empty>{`No registered ${label.toLowerCase()} is available.`}</Empty>
+    );
+  }
+  const topK = system.retrieval_config.top_k;
+  return (
+    <article className={`panel${candidate ? " candidate" : ""}`}>
+      <span className="eyebrow">{label}</span>
+      <h2>
+        {system.name} {system.version}
+      </h2>
+      <dl>
+        <dt>Provider</dt>
+        <dd>
+          {system.model_provider} / {system.model_name}
+        </dd>
+        <dt>Prompt</dt>
+        <dd>{system.prompt_version}</dd>
+        <dt>Retriever</dt>
+        <dd>
+          {displayMethod(system.retrieval_config.method)}
+          {topK === undefined ? "" : ` · top ${topK}`}
+        </dd>
+        <dt>Tools</dt>
+        <dd>{displayTools(system.tool_config)}</dd>
+        <dt>Data source</dt>
+        <dd>{system.data_source_version}</dd>
+      </dl>
+    </article>
+  );
 }
 
 export default function App() {
@@ -144,6 +204,12 @@ export default function App() {
   }
 
   const project = dashboard?.projects[0];
+  const baselineSystem = dashboard?.system_versions.find(
+    (system) => system.kind === "BASELINE",
+  );
+  const candidateSystem = dashboard?.system_versions.find(
+    (system) => system.kind === "CANDIDATE",
+  );
   const regressions = useMemo(
     () => detail?.case_results.filter((item) => item.regression) ?? [],
     [detail],
@@ -328,34 +394,15 @@ export default function App() {
 
         {context && view === "System registry" && (
           <section className="compare">
-            <article className="panel">
-              <span className="eyebrow">Production baseline</span>
-              <h2>AML Assistant 1.0</h2>
-              <dl>
-                <dt>Provider</dt>
-                <dd>Deterministic local</dd>
-                <dt>Prompt</dt>
-                <dd>strict-governance/1</dd>
-                <dt>Retriever</dt>
-                <dd>Hybrid · top 3</dd>
-                <dt>Tools</dt>
-                <dd>Filing disabled</dd>
-              </dl>
-            </article>
-            <article className="panel candidate">
-              <span className="eyebrow">Release candidate</span>
-              <h2>AML Assistant 2.0</h2>
-              <dl>
-                <dt>Provider</dt>
-                <dd>Deterministic local</dd>
-                <dt>Prompt</dt>
-                <dd>strict-governance/2</dd>
-                <dt>Retriever</dt>
-                <dd>Hybrid · top 3</dd>
-                <dt>Tools</dt>
-                <dd>Filing disabled</dd>
-              </dl>
-            </article>
+            <SystemVersionCard
+              label="Production baseline"
+              system={baselineSystem}
+            />
+            <SystemVersionCard
+              label="Release candidate"
+              system={candidateSystem}
+              candidate
+            />
           </section>
         )}
 

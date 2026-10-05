@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from src.enterprise import api as api_module
-from src.enterprise.models import Base, User
+from src.enterprise.models import Base, SystemVersion, User
 from src.enterprise.security import get_db
 from src.enterprise.service import EnterpriseService
 
@@ -45,6 +45,24 @@ def test_demo_bootstrap_and_authenticated_release_run(monkeypatch):
         assert response.json()["items"][0]["name"] == "AML Policy Assistant Release Validation"
         assert response.headers["X-Correlation-Id"]
 
+        dashboard = client.get("/api/v1/dashboard", headers={"X-User-Id": evaluator.id})
+        assert dashboard.status_code == 200
+        systems = dashboard.json()["system_versions"]
+        assert {item["kind"] for item in systems} == {"BASELINE", "CANDIDATE"}
+        assert all(item["retrieval_config"] == {"method": "bm25", "top_k": 3} for item in systems)
+
+        candidate = session.scalar(select(SystemVersion).where(SystemVersion.kind == "CANDIDATE"))
+        candidate.retrieval_config = {"method": "vector", "top_k": 5}
+        session.commit()
+        changed = client.get("/api/v1/dashboard", headers={"X-User-Id": evaluator.id})
+        changed_candidate = next(
+            item for item in changed.json()["system_versions"] if item["kind"] == "CANDIDATE"
+        )
+        assert changed_candidate["retrieval_config"] == {"method": "vector", "top_k": 5}
+
+        candidate.retrieval_config = {"method": "bm25", "top_k": 3}
+        session.commit()
+
         project_id = response.json()["items"][0]["id"]
         created = client.post(
             f"/api/v1/projects/{project_id}/runs",
@@ -56,6 +74,14 @@ def test_demo_bootstrap_and_authenticated_release_run(monkeypatch):
         assert detail.status_code == 200
         assert detail.json()["decision"]["outcome"] == "BLOCK"
         assert len(detail.json()["case_results"]) == 6
+        assert detail.json()["baseline_system_version"]["retrieval_config"] == {
+            "method": "bm25",
+            "top_k": 3,
+        }
+        assert detail.json()["candidate_system_version"]["retrieval_config"] == {
+            "method": "bm25",
+            "top_k": 3,
+        }
     finally:
         api_module.app.dependency_overrides.clear()
         session.close()

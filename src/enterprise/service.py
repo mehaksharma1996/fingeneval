@@ -80,6 +80,46 @@ def _safe_dict(model) -> dict[str, Any]:
     return {column.name: getattr(model, column.name) for column in model.__table__.columns}
 
 
+def _system_version_snapshot(system: SystemVersion) -> dict[str, Any]:
+    """Return the immutable configuration fields exposed to UI and reports."""
+    return {
+        "id": system.id,
+        "project_id": system.project_id,
+        "name": system.name,
+        "version": system.version,
+        "kind": system.kind,
+        "model_provider": system.model_provider,
+        "model_name": system.model_name,
+        "prompt_version_id": system.prompt_version_id,
+        "prompt_version": system.prompt_version,
+        "retrieval_configuration_id": system.retrieval_configuration_id,
+        "retrieval_config": system.retrieval_config,
+        "tool_config": system.tool_config,
+        "data_source_version": system.data_source_version,
+        "created_at": system.created_at,
+    }
+
+
+def _system_report_lines(label: str, system: SystemVersion) -> list[str]:
+    retrieval = system.retrieval_config or {}
+    method = retrieval.get("method", "unknown")
+    top_k = retrieval.get("top_k", "unknown")
+    reranker = retrieval.get("reranker")
+    retrieval_summary = f"{method} (top_k={top_k})"
+    if reranker:
+        retrieval_summary += f", reranker={reranker}"
+    return [
+        f"### {label}: {system.name} {system.version}",
+        f"- System version ID: `{system.id}`",
+        f"- Model: `{system.model_provider} / {system.model_name}`",
+        f"- Prompt: `{system.prompt_version}` (`{system.prompt_version_id}`)",
+        f"- Retrieval: `{retrieval_summary}` (`{system.retrieval_configuration_id}`)",
+        f"- Tools: `{json.dumps(system.tool_config, sort_keys=True)}`",
+        f"- Data source version: `{system.data_source_version}`",
+        "",
+    ]
+
+
 class EnterpriseService:
     def __init__(
         self,
@@ -814,6 +854,8 @@ class EnterpriseService:
         if not decision:
             raise ServiceError("DECISION_NOT_AVAILABLE", "Run has no release decision", 409)
         project = self._tenant_entity(Project, run.project_id, actor)
+        baseline = self._tenant_entity(SystemVersion, run.baseline_system_version_id, actor)
+        candidate = self._tenant_entity(SystemVersion, run.candidate_system_version_id, actor)
         results = list(self.session.scalars(select(CaseResult).where(CaseResult.run_id == run.id)))
         findings = list(self.session.scalars(select(Finding).where(Finding.run_id == run.id)))
         evidence = [f"case_result:{result.id}" for result in results]
@@ -842,6 +884,9 @@ class EnterpriseService:
             f"- Effective decision after human review: **{decision.effective_outcome}**",
             f"- Policy: `{decision.policy_version}`",
             "",
+            "## Evaluated system versions",
+            *_system_report_lines("Baseline", baseline),
+            *_system_report_lines("Candidate", candidate),
             "## Triggered policy rules",
             *[
                 f"- `{item['rule_id']}`: {item['description']} Evidence: {', '.join(item['evidence'])}"
@@ -888,6 +933,8 @@ class EnterpriseService:
 
     def run_detail(self, run_id: str, actor: ServiceActor) -> dict[str, Any]:
         run = self._tenant_entity(EvaluationRun, run_id, actor)
+        baseline = self._tenant_entity(SystemVersion, run.baseline_system_version_id, actor)
+        candidate = self._tenant_entity(SystemVersion, run.candidate_system_version_id, actor)
         results = list(self.session.scalars(select(CaseResult).where(CaseResult.run_id == run.id)))
         findings = list(self.session.scalars(select(Finding).where(Finding.run_id == run.id)))
         decision = self.session.scalar(select(ReleaseDecision).where(ReleaseDecision.run_id == run.id))
@@ -904,6 +951,8 @@ class EnterpriseService:
         )
         return {
             "run": _safe_dict(run),
+            "baseline_system_version": _system_version_snapshot(baseline),
+            "candidate_system_version": _system_version_snapshot(candidate),
             "case_results": [_safe_dict(item) for item in results],
             "findings": [_safe_dict(item) for item in findings],
             "decision": _safe_dict(decision) if decision else None,
@@ -913,6 +962,13 @@ class EnterpriseService:
 
     def dashboard(self, actor: ServiceActor) -> dict[str, Any]:
         projects = list(self.session.scalars(select(Project).where(Project.tenant_id == actor.tenant_id)))
+        systems = list(
+            self.session.scalars(
+                select(SystemVersion)
+                .where(SystemVersion.tenant_id == actor.tenant_id)
+                .order_by(SystemVersion.created_at.desc())
+            )
+        )
         runs = list(
             self.session.scalars(
                 select(EvaluationRun)
@@ -933,6 +989,7 @@ class EnterpriseService:
         return {
             "synthetic": True,
             "projects": [_safe_dict(item) for item in projects],
+            "system_versions": [_system_version_snapshot(item) for item in systems],
             "recent_runs": [_safe_dict(item) for item in runs],
             "open_critical_findings": len(critical),
             "operational_health": "HEALTHY",

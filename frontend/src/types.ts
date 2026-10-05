@@ -22,6 +22,28 @@ export interface Project {
   required_approver_roles: string[];
 }
 
+export interface SystemVersion {
+  id: string;
+  project_id: string;
+  name: string;
+  version: string;
+  kind: "BASELINE" | "CANDIDATE";
+  model_provider: string;
+  model_name: string;
+  prompt_version_id: string;
+  prompt_version: string;
+  retrieval_configuration_id: string;
+  retrieval_config: {
+    method?: string;
+    top_k?: number;
+    reranker?: string | null;
+    [key: string]: unknown;
+  };
+  tool_config: Record<string, unknown>;
+  data_source_version: string;
+  created_at: string;
+}
+
 export interface Run {
   id: string;
   project_id: string;
@@ -90,6 +112,8 @@ export interface Decision {
 
 export interface RunDetail {
   run: Run;
+  baseline_system_version: SystemVersion;
+  candidate_system_version: SystemVersion;
   case_results: CaseResult[];
   findings: Finding[];
   decision?: Decision;
@@ -100,6 +124,7 @@ export interface RunDetail {
 export interface Dashboard {
   synthetic: boolean;
   projects: Project[];
+  system_versions: SystemVersion[];
   recent_runs: Run[];
   open_critical_findings: number;
   operational_health: string;

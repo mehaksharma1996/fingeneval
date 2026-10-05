@@ -110,6 +110,9 @@ def test_critical_regression_review_remediation_rerun_and_report():
     report = service.generate_report(rerun.id, evaluator)
     assert report.object_key in storage.items
     assert "Computed decision: **PASS**" in storage.items[report.object_key]
+    assert "## Evaluated system versions" in storage.items[report.object_key]
+    assert "Retrieval: `bm25 (top_k=3)`" in storage.items[report.object_key]
+    assert "Data source version: `aml-policy/1.0`" in storage.items[report.object_key]
     assert session.scalar(select(AuditEvent).where(AuditEvent.event_type == "FINDING_RESOLVED"))
     assert service.run_detail(run.id, evaluator)["agent_traces"]
 
