@@ -1,7 +1,7 @@
 {
   "run_timestamp_utc": "2026-09-28T05:35:23Z",
   "dataset_path": "data/eval/test_questions.csv",
-  "dataset_sha256_12": "3a8606869041",
+  "dataset_sha256_12": "990b2edecbd7",
   "questions": 45,
   "answerable_questions": 36,
   "unanswerable_questions": 9,

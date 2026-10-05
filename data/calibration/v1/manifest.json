@@ -5,7 +5,7 @@
   "annotation_file": "calibration_cases.csv",
   "annotation_sha256_12": "PENDING",
   "dataset_path": "data/eval/test_questions.csv",
-  "dataset_sha256_12": "3a8606869041",
+  "dataset_sha256_12": "990b2edecbd7",
   "selection": "Twelve controlled cases spanning correct answers, negation, wrong numbers, missing and invalid citations, unsupported additions, correct abstention, hallucinated unanswerable answers, and false refusal.",
   "thresholds": {
     "contextual_recall": 0.8,

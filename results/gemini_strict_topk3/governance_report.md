@@ -10,7 +10,7 @@ Run status: `PARTIAL_GENERATION`. Best retrieval method by MRR: `vector`. Answer
 - Structural completeness: True; rows: 180/180; deployment evidence: False
 - Replayed successful LLM rows: 0
 - Run timestamp (UTC): 2026-09-28T05:35:23Z
-- Dataset: data/eval/test_questions.csv (sha256 3a8606869041)
+- Dataset: data/eval/test_questions.csv (sha256 990b2edecbd7)
 - Questions: 45 (36 answerable, 9 unanswerable)
 - Retrieval methods: bm25, hybrid, hybrid_reranker, vector; top_k = 3
 - Generation modes: {'generation_error': 161, 'llm': 19}

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 from collections.abc import Mapping, Sequence
@@ -16,6 +15,7 @@ import pandas as pd
 from . import metrics
 from .retrievers import RetrievalResult, build_chunks
 from .settings import settings
+from .utils import text_fingerprint
 
 CALIBRATION_SCHEMA_VERSION = "1.0"
 LABEL_COLUMNS = {
@@ -98,7 +98,7 @@ class CalibrationResult:
 
 
 def _sha256_12(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+    return text_fingerprint(path)
 
 
 def _parse_label(value: Any) -> int | None:

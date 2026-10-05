@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -15,6 +14,7 @@ import pandas as pd
 from .llm import MODE_ERROR, MODE_LLM, MODE_RETRIEVAL_ONLY
 from .metrics import ANSWER_METRIC_COLUMNS
 from .settings import settings
+from .utils import text_fingerprint
 
 ALLOWED_GENERATION_MODES = {MODE_RETRIEVAL_ONLY, MODE_LLM, MODE_ERROR}
 REQUIRED_COLUMNS = {
@@ -116,7 +116,7 @@ def _verify_dataset(metadata: Mapping[str, Any], errors: list[str]) -> None:
         errors.append(f"dataset_path does not exist: {dataset_path}")
         return
 
-    actual_fingerprint = hashlib.sha256(dataset_path.read_bytes()).hexdigest()[:12]
+    actual_fingerprint = text_fingerprint(dataset_path)
     expected_fingerprint = str(metadata.get("dataset_sha256_12", ""))
     if actual_fingerprint != expected_fingerprint:
         errors.append(

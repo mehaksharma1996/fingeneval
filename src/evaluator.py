@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import time
@@ -16,6 +15,7 @@ from . import llm, metrics
 from .llm import MODE_LLM, answer_question
 from .retrievers import BM25Retriever, HybridRetriever, RetrievalResult, VectorRetriever, build_chunks
 from .settings import settings
+from .utils import text_fingerprint
 
 DEFAULT_METHODS = ["vector", "bm25", "hybrid", "hybrid_reranker"]
 DEFAULT_PROMPTS = ["strict_governance"]
@@ -85,7 +85,7 @@ def load_questions(path: Path = settings.eval_path) -> pd.DataFrame:
 
 def dataset_fingerprint(path: Path = settings.eval_path) -> str:
     """Return a short content hash so reports identify the exact dataset used."""
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+    return text_fingerprint(Path(path))
 
 
 def evaluate_row(
