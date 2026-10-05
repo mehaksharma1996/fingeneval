@@ -54,6 +54,7 @@ def test_report_applies_gates_to_llm_rows():
         "question_type": "exact_threshold",
         "retrieval_method": "bm25",
         "prompt_style": "strict_governance",
+        "top_k": 3,
         "hit_at_k": 1.0,
         "reciprocal_rank": 1.0,
         "contextual_precision": 1.0,
@@ -68,6 +69,8 @@ def test_report_applies_gates_to_llm_rows():
         "hallucination_risk": 0.0,
         "answer_correctness_proxy": 0.9,
         "abstained": 0.0,
+        "abstention_correct": 1.0,
+        "claim_count": 1.0,
     }
     answered_unanswerable = {
         **base,
@@ -82,7 +85,16 @@ def test_report_applies_gates_to_llm_rows():
         "abstained": 0.0,
     }
     frame = pd.DataFrame([{**base, "question": "answerable", "answerable": 1}, answered_unanswerable])
-    report = generate_governance_report(frame, {})
+    metadata = {
+        "questions": 2,
+        "methods": ["bm25"],
+        "prompt_styles": ["strict_governance"],
+        "top_k": 3,
+        "generation_modes": {"llm": 2},
+        "dataset_path": "synthetic.csv",
+        "dataset_sha256_12": "synthetic",
+    }
+    report = generate_governance_report(frame, metadata)
     assert "High risk" in report
     assert "Correct abstention (unanswerable)" in report
 
@@ -136,5 +148,6 @@ def test_resume_reuses_successful_llm_rows(api_key, monkeypatch, tmp_path):
     monkeypatch.setattr(llm, "call_gemini", lambda prompt: calls.append(1) or "Answer [1].")
     second, metadata = evaluator.run_evaluation(["bm25"], ["strict_governance"], 3, resume_from=path)
     assert metadata["reused_llm_rows"] == 1
+    assert metadata["run_status"] == "COMPLETE_GENERATION_REPLAYED"
     assert len(calls) == len(second) - 1
     assert second.iloc[0]["answer"] == first.iloc[0]["answer"]

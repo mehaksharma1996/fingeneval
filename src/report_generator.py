@@ -11,6 +11,7 @@ import math
 import pandas as pd
 
 from .llm import MODE_ERROR, MODE_LLM
+from .run_integrity import RunIntegrity, inspect_run
 from .settings import settings
 
 RETRIEVAL_METRICS = [
@@ -147,8 +148,20 @@ def gate_results(config: pd.Series) -> list[tuple[str, str, bool]]:
     ]
 
 
-def deployment_recommendation(generation: pd.DataFrame) -> str:
+def deployment_recommendation(generation: pd.DataFrame, integrity: RunIntegrity) -> str:
     """Apply deterministic model-risk deployment logic to the best configuration."""
+    if not integrity.structurally_complete:
+        return (
+            "Insufficient evidence. The run failed structural integrity validation: "
+            + "; ".join(integrity.errors)
+            + "."
+        )
+    if not integrity.deployable_evidence:
+        return (
+            f"Insufficient evidence. Run status is `{integrity.status}` with generation modes "
+            f"{integrity.generation_modes}. A deployment recommendation requires a structurally complete "
+            "run in which every benchmark row has a successful LLM answer."
+        )
     if generation.empty:
         return (
             "Insufficient evidence. No LLM answers were generated in this run (retrieval-only mode), "
@@ -203,7 +216,7 @@ def retrieval_section(frame: pd.DataFrame) -> list[str]:
     ]
 
 
-def generation_section(generation: pd.DataFrame) -> list[str]:
+def generation_section(generation: pd.DataFrame, integrity: RunIntegrity) -> list[str]:
     """Render answer-level metrics or state clearly that none were produced."""
     if generation.empty:
         return [
@@ -231,20 +244,33 @@ def generation_section(generation: pd.DataFrame) -> list[str]:
         [(name, threshold, "PASS" if passed else "FAIL") for name, threshold, passed in gate_results(best)],
         columns=["Gate", "Threshold", "Result"],
     )
+    evidence_note = (
+        "All expected answer rows were generated successfully."
+        if integrity.deployable_evidence
+        else f"Diagnostic only: run status is `{integrity.status}`; incomplete answer metrics cannot support deployment."
+    )
+    gate_heading = "Deployment Gates" if integrity.deployable_evidence else "Diagnostic Gate Results"
     return [
         "## Answer Quality",
-        "Measured only on rows where the LLM produced an answer (see Answered). Generation latency excludes "
-        "rate-limit and retry waits.",
+        evidence_note + " Metrics use only rows where the LLM produced an answer (see Answered). "
+        "Generation latency excludes rate-limit and retry waits.",
         markdown_table(table),
-        f"### Deployment Gates For `{best['retrieval_method']} / {best['prompt_style']}`",
+        f"### {gate_heading} For `{best['retrieval_method']} / {best['prompt_style']}`",
         markdown_table(gates),
     ]
 
 
-def metadata_section(metadata: dict[str, object] | None, frame: pd.DataFrame) -> list[str]:
+def metadata_section(
+    metadata: dict[str, object] | None, frame: pd.DataFrame, integrity: RunIntegrity
+) -> list[str]:
     """Render run metadata so the report identifies exactly what was tested."""
     metadata = metadata or {}
     lines = [
+        f"- Run status: {integrity.status}",
+        f"- Structural completeness: {integrity.structurally_complete}; "
+        f"rows: {integrity.actual_rows}/{integrity.expected_rows}; "
+        f"deployment evidence: {integrity.deployable_evidence}",
+        f"- Replayed successful LLM rows: {integrity.replayed_rows}",
         f"- Run timestamp (UTC): {metadata.get('run_timestamp_utc', 'unknown')}",
         f"- Dataset: {metadata.get('dataset_path', 'unknown')} (sha256 {metadata.get('dataset_sha256_12', 'unknown')})",
         f"- Questions: {frame['question'].nunique()} "
@@ -262,30 +288,41 @@ def generate_governance_report(frame: pd.DataFrame, metadata: dict[str, object] 
     """Generate a formal validation report from computed metrics without an LLM."""
     if frame.empty:
         return "No evaluation results are available. Run the evaluation before generating a report."
+    metadata = metadata or {}
+    integrity = inspect_run(frame, metadata, verify_dataset=False)
     retrieval = summarize_retrieval(frame)
     generation = summarize_generation(frame)
     best_retrieval = retrieval.iloc[0]["retrieval_method"]
     if generation.empty:
         summary = (
-            f"Best retrieval method by MRR: `{best_retrieval}`. "
+            f"Run status: `{integrity.status}`. Best retrieval method by MRR: `{best_retrieval}`. "
             "Answer-level metrics were not produced in this run."
         )
-    else:
+    elif integrity.deployable_evidence:
         best = generation.iloc[0]
         summary = (
-            f"Best retrieval method by MRR: `{best_retrieval}`. Best end-to-end configuration: "
+            f"Run status: `{integrity.status}`. Best retrieval method by MRR: `{best_retrieval}`. "
+            "Best end-to-end configuration: "
             f"`{best['retrieval_method']} / {best['prompt_style']}` "
             f"(hallucination risk {pct(best['hallucination_risk'])}, faithfulness {pct(best['faithfulness_proxy'])}, "
             f"correct abstention {pct(best['correct_abstention_rate'])})."
+        )
+    else:
+        answered = int(generation["answered_rows"].sum())
+        total = int(generation["total_rows"].sum())
+        summary = (
+            f"Run status: `{integrity.status}`. Best retrieval method by MRR: `{best_retrieval}`. "
+            f"Answer metrics cover only {answered}/{total} rows and are diagnostic only; no end-to-end "
+            "configuration or deployment decision is recommended."
         )
     return "\n\n".join(
         [
             "# FinGenEval Validation Report",
             "## Executive Summary",
             summary,
-            *metadata_section(metadata, frame),
+            *metadata_section(metadata, frame, integrity),
             *retrieval_section(frame),
-            *generation_section(generation),
+            *generation_section(generation, integrity),
             "## Metric Definitions",
             "\n".join(
                 [
@@ -305,16 +342,26 @@ def generate_governance_report(frame: pd.DataFrame, metadata: dict[str, object] 
                 "before any customer-impacting deployment."
             ),
             "## Deployment Recommendation",
-            deployment_recommendation(generation),
+            deployment_recommendation(generation, integrity),
         ]
     )
 
 
-def recommended_config(frame: pd.DataFrame) -> dict[str, object]:
+def recommended_config(frame: pd.DataFrame, metadata: dict[str, object] | None = None) -> dict[str, object]:
     """Return the best configuration for app display."""
     if frame.empty:
         return {}
+    integrity = inspect_run(frame, metadata or {}, verify_dataset=False)
     generation = summarize_generation(frame)
-    if not generation.empty:
-        return generation.iloc[0].to_dict()
-    return summarize_retrieval(frame).iloc[0].to_dict()
+    if integrity.deployable_evidence and not generation.empty:
+        result = generation.iloc[0].to_dict()
+        result["run_status"] = integrity.status
+        return result
+    retrieval = summarize_retrieval(frame).iloc[0].to_dict()
+    retrieval.update(
+        {
+            "run_status": integrity.status,
+            "recommendation": "INSUFFICIENT_EVIDENCE",
+        }
+    )
+    return retrieval

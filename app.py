@@ -174,7 +174,7 @@ def report_tab() -> None:
         return
     metadata = st.session_state.get("eval_meta", {})
     st.subheader("Recommended Configuration")
-    st.dataframe(pd.DataFrame([recommended_config(frame)]), width="stretch")
+    st.dataframe(pd.DataFrame([recommended_config(frame, metadata)]), width="stretch")
     report = generate_governance_report(frame, metadata)
     st.markdown(report)
     col1, col2 = st.columns(2)

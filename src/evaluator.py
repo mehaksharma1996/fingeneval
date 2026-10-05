@@ -197,6 +197,10 @@ def run_evaluation(
         "reranker_model": settings.reranker_model_name,
         "hybrid_weights": {"vector": settings.hybrid_vector_weight, "bm25": settings.hybrid_bm25_weight},
     }
+    from .run_integrity import validate_run
+
+    integrity = validate_run(frame, metadata)
+    metadata.update(integrity.metadata_fields())
     return frame, metadata
 
 
@@ -215,6 +219,10 @@ def reusable_rows(path: Path | None, top_k: int) -> dict[tuple[str, str, str], d
 def save_run(frame: pd.DataFrame, metadata: dict[str, object], output_dir: Path) -> Path:
     """Write the evaluation CSV, governance report, and metadata to one folder."""
     from .report_generator import generate_governance_report
+    from .run_integrity import validate_run
+
+    integrity = validate_run(frame, metadata)
+    metadata.update(integrity.metadata_fields())
 
     output_dir.mkdir(parents=True, exist_ok=True)
     frame.to_csv(output_dir / "evaluation_results.csv", index=False)

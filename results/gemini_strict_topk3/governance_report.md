@@ -2,10 +2,13 @@
 
 ## Executive Summary
 
-Best retrieval method by MRR: `vector`. Best end-to-end configuration: `hybrid_reranker / strict_governance` (hallucination risk 0.0%, faithfulness 100.0%, correct abstention n/a).
+Run status: `PARTIAL_GENERATION`. Best retrieval method by MRR: `vector`. Answer metrics cover only 19/180 rows and are diagnostic only; no end-to-end configuration or deployment decision is recommended.
 
 ## Run Metadata
 
+- Run status: PARTIAL_GENERATION
+- Structural completeness: True; rows: 180/180; deployment evidence: False
+- Replayed successful LLM rows: 0
 - Run timestamp (UTC): 2026-09-28T05:35:23Z
 - Dataset: data/eval/test_questions.csv (sha256 3a8606869041)
 - Questions: 45 (36 answerable, 9 unanswerable)
@@ -38,7 +41,7 @@ Measured on answerable questions against labeled relevant sections. Latency excl
 
 ## Answer Quality
 
-Measured only on rows where the LLM produced an answer (see Answered). Generation latency excludes rate-limit and retry waits.
+Diagnostic only: run status is `PARTIAL_GENERATION`; incomplete answer metrics cannot support deployment. Metrics use only rows where the LLM produced an answer (see Answered). Generation latency excludes rate-limit and retry waits.
 
 | Configuration | Answered | Faithfulness | Citation coverage | Citation validity | Hallucination risk | Correct abstention | False refusal | Answer correctness | Gen p50 | Gen p95 | Errors |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -47,7 +50,7 @@ Measured only on rows where the LLM produced an answer (see Answered). Generatio
 | hybrid / strict_governance | 4/45 | 100.0% | 100.0% | 100.0% | 0.0% | n/a | 0.0% | 84.2% | 1032.7 ms | 1301.0 ms | 91.1% |
 | bm25 / strict_governance | 4/45 | 100.0% | 100.0% | 100.0% | 0.0% | n/a | 0.0% | 79.8% | 1204.8 ms | 1651.6 ms | 91.1% |
 
-### Deployment Gates For `hybrid_reranker / strict_governance`
+### Diagnostic Gate Results For `hybrid_reranker / strict_governance`
 
 | Gate | Threshold | Result |
 |---|---|---|
@@ -74,4 +77,4 @@ The validation corpus is synthetic and small, and answer metrics are lexical pro
 
 ## Deployment Recommendation
 
-Insufficient evidence. Generation failed on 91.1% of rows; rerun before deciding.
+Insufficient evidence. Run status is `PARTIAL_GENERATION` with generation modes {'generation_error': 161, 'llm': 19}. A deployment recommendation requires a structurally complete run in which every benchmark row has a successful LLM answer.

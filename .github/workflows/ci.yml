@@ -20,6 +20,11 @@ jobs:
       - run: ruff check src tests
       - run: mypy src/enterprise
       - run: pytest -q --cov=src --cov-report=term-missing
+      - name: Validate committed benchmark evidence
+        run: >-
+          python -m src.run_integrity
+          results/retrieval_only_topk3
+          results/gemini_strict_topk3
       - run: bandit -q -c pyproject.toml -r src
       - run: pip-audit -r requirements-api.txt
       - run: alembic upgrade head

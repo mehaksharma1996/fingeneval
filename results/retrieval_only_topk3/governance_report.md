@@ -2,10 +2,13 @@
 
 ## Executive Summary
 
-Best retrieval method by MRR: `vector`. Answer-level metrics were not produced in this run.
+Run status: `RETRIEVAL_ONLY_COMPLETE`. Best retrieval method by MRR: `vector`. Answer-level metrics were not produced in this run.
 
 ## Run Metadata
 
+- Run status: RETRIEVAL_ONLY_COMPLETE
+- Structural completeness: True; rows: 180/180; deployment evidence: False
+- Replayed successful LLM rows: 0
 - Run timestamp (UTC): 2026-09-28T05:14:35Z
 - Dataset: data/eval/test_questions.csv (sha256 3a8606869041)
 - Questions: 45 (36 answerable, 9 unanswerable)

@@ -85,6 +85,14 @@ python -m src.evaluator --methods bm25 --top-k 3 --output-dir results/gemini_bm2
 
 Reports never treat retrieval-only or failed-generation rows as measured answer quality.
 
+Validate a saved run before citing or comparing it:
+
+```powershell
+python -m src.run_integrity results/retrieval_only_topk3
+```
+
+The validator rejects incomplete matrices, duplicate benchmark keys, undeclared generation modes, dataset-fingerprint drift, metadata/count mismatches, and answer metrics populated on non-LLM rows. Its status distinguishes complete retrieval-only, complete generation, partial generation, failed generation, mixed-mode, invalid, and replayed evidence.
+
 ## Saved results
 
 Committed result folders are evidence from actual runs, not illustrative numbers:
@@ -93,6 +101,7 @@ Committed result folders are evidence from actual runs, not illustrative numbers
 - `results/gemini_strict_topk3/` is a partial hosted-generation run with 19 successful LLM rows and 161 recorded generation errors. It must not be presented as a complete answer-quality benchmark.
 
 Each result folder contains the row-level CSV, run metadata, and a deterministic governance report.
+Exact reproduction commands and known provenance limitations are documented in [results/README.md](results/README.md). CI validates both committed runs against the current labeled dataset.
 
 ## Repository map
 
@@ -104,6 +113,7 @@ Each result folder contains the row-level CSV, run metadata, and a deterministic
 - `src/metrics.py`: pure retrieval and answer metrics
 - `src/evaluator.py`: benchmark orchestration, timing, resume support, and saved runs
 - `src/report_generator.py`: deterministic summaries and deployment gates
+- `src/run_integrity.py`: saved-run validation and evidence classification
 - `src/settings.py`: paths, models, weights, and thresholds
 - `data/docs/`: synthetic financial-policy corpus
 - `data/eval/test_questions.csv`: labeled evaluation dataset

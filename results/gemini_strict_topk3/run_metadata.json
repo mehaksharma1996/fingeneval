@@ -20,11 +20,17 @@
     "generation_error": 161,
     "llm": 19
   },
+  "run_status": "PARTIAL_GENERATION",
+  "expected_rows": 180,
+  "actual_rows": 180,
+  "structurally_complete": true,
+  "deployable_evidence": false,
   "generation_model": "gemini-2.5-flash",
   "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
   "reranker_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
   "hybrid_weights": {
     "vector": 0.5,
     "bm25": 0.5
-  }
+  },
+  "provenance_note": "Original OS, Python patch version, package versions, provider limits, and exact invocation were not recorded."
 }
