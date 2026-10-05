@@ -23,6 +23,10 @@ warn_unused_ignores = true
 no_implicit_optional = true
 check_untyped_defs = true
 
+[[tool.mypy.overrides]]
+module = ["sentence_transformers", "sentence_transformers.*"]
+ignore_missing_imports = true
+
 [tool.bandit]
 exclude_dirs = ["tests"]
 skips = ["B105"] # ReleaseOutcome.PASS is an enum, not a credential.

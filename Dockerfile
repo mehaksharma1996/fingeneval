@@ -6,6 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FINGENEVAL_DATABASE_URL=sqlite:////data/fingeneval.db \
     FINGENEVAL_REPORT_DIR=/data/reports
 
+RUN apt-get update \
+    && apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system app && useradd --system --gid app --uid 10001 app
 WORKDIR /app
 COPY requirements-api.txt .
