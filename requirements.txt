@@ -1,6 +1,6 @@
 streamlit>=1.50.0
 pandas>=2.2.0
-numpy>=1.26.0
+numpy>=1.26.0,<2.4.0
 scikit-learn>=1.4.0
 sentence-transformers>=3.0.0
 faiss-cpu>=1.8.0
