@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
 
-describe("FinGenEval Enterprise shell", () => {
+describe("FinGenEval governance prototype shell", () => {
   beforeEach(() => localStorage.clear());
 
   it("labels the credential-free demo as synthetic", () => {

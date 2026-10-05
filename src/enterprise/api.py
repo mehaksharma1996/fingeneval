@@ -1,4 +1,4 @@
-"""Versioned FastAPI application for FinGenEval Enterprise."""
+"""Experimental local governance API around the FinGenEval assets."""
 
 from __future__ import annotations
 
@@ -32,11 +32,11 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="FinGenEval Enterprise API",
+    title="FinGenEval Governance Prototype API",
     version="0.1.0",
     description=(
-        "Agentic validation and deterministic release gating for financial AI systems. "
-        "Bundled data and demo outcomes are synthetic."
+        "Experimental local workflow for deterministic release-gate demonstrations. "
+        "It is not the supported FinGenEval product path; bundled data and outcomes are synthetic."
     ),
     lifespan=lifespan,
 )

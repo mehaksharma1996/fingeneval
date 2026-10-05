@@ -1,148 +1,136 @@
-# FinGenEval Enterprise
+# FinGenEval
 
-**Agentic validation and release gating for financial AI systems**
+**Offline evaluation and release gating for financial RAG configurations**
 
-FinGenEval Enterprise helps model-risk, compliance, product, and engineering teams answer one release question: **is a financial AI assistant, copilot, RAG application, or agent safe and reliable enough to release?**
+FinGenEval is a reproducible evaluation harness for financial-policy question answering. It compares retrieval and prompting configurations against labeled questions and produces deterministic validation reports covering retrieval quality, grounding, citation behavior, hallucination risk, abstention, latency, and deployment gates.
 
-The platform compares a registered production baseline with a release candidate, executes a versioned risk-weighted evaluation pack, exposes case-level evidence and regressions, creates governed findings, and applies deterministic release rules. Its four possible recommendations are `PASS`, `PASS WITH CONDITIONS`, `BLOCK`, and `INSUFFICIENT EVIDENCE`.
+The supported product is the offline harness. It is not a conversational assistant, a multi-agent system, a tool-calling runtime, or a business-intelligence platform.
 
-The bundled scenario is a synthetic internal AML policy assistant. Candidate version `2.0-regression` looks healthy on most cases but changes a mandatory suspicious-activity-report deadline from 30 to 45 days. The system identifies the unsupported deadline, preserves the authoritative policy citation, creates a critical finding, and blocks the release. A reviewer can record a justified decision, engineering can register remediation, and a targeted rerun validates candidate `2.0-remediated`.
+All bundled documents, questions, identities, and outcomes are synthetic. FinGenEval and its reports are not legal, regulatory, compliance, or financial advice.
 
-> All bundled policies, organizations, identities, cases, metrics, and outcomes are synthetic. This software and its outputs are not legal, regulatory, compliance, or financial advice. It is designed to support evaluation and governance workflows; it has not been independently assessed for compliance with any law or standard.
-
-## Why aggregate scores are insufficient
-
-A candidate can improve average retrieval or answer quality while failing one business-critical deadline, threshold, access boundary, or tool-permission case. FinGenEval preserves aggregate metrics but releases are controlled by case severity and explicit rules. One unresolved critical regression blocks a release even when a weighted average rises.
-
-## What is agentic—and what remains deterministic
-
-The controlled workflow has typed, bounded steps for intake and scoping, test design, evidence verification, risk summarization, failure investigation, remediation, and production handoff. Each step has validated output, timeout/retry behavior, and a persisted trace. Test proposals remain drafts until human approval.
-
-Metric computation, run completeness, authorization, and the final release gate are deterministic. Agents cannot approve a test, override a decision, mutate a release policy, or recursively delegate work. A human override requires an authorized role, a justification, a timestamp, and an audit event.
-
-## Architecture
+## Supported architecture
 
 ```text
-React/TypeScript workflow UI
-            |
-        FastAPI /api/v1  -- correlation IDs, RBAC, OpenAPI
-            |
-  application service + controlled agent graph
-            |
- approved documents -> section chunks -> BM25 retrieval
-            |
- deterministic local generation + response comparison
-            |
- versioned deterministic release policy
-            |
- SQLAlchemy repositories -- SQLite local / PostgreSQL production target
-            |
- local object storage -- S3-compatible production target
+Evaluator
+   |-- Streamlit engineering UI
+   `-- CLI benchmark runner
+             |
+       labeled questions
+             |
+    document loading + section chunking
+             |
+ BM25 / vector / hybrid / reranked retrieval
+             |
+ optional Gemini generation or retrieval-only mode
+             |
+ deterministic metrics and deployment gates
+             |
+ CSV results + metadata + Markdown validation report
 ```
 
-The React/FastAPI product now reuses the shared document loader, section chunker, and BM25 retriever for every enterprise baseline/candidate response. The original Streamlit inspector remains available as an engineering surface for comparing BM25, vector, hybrid, and reranked retrieval over the larger 45-question benchmark.
+Both supported entry points call the same evaluation engine:
 
-See the [end-to-end workflow](docs/end-to-end-workflow.md), [architecture](docs/architecture.md), [API](docs/api.md), [threat model](docs/threat-model.md), and [deployment](docs/deployment.md).
+- `app.py` provides query inspection, retrieval comparison, benchmark execution, and report download.
+- `python -m src.evaluator` runs the reproducible benchmark from the command line.
 
-## Run locally without paid credentials
+The architecture is described in [docs/architecture.md](docs/architecture.md) and the execution path in [docs/end-to-end-workflow.md](docs/end-to-end-workflow.md).
 
-Prerequisites: Python 3.11+, Node.js 22+, and npm.
+## Evaluation scope
+
+- 45 labeled questions: 36 answerable and 9 unanswerable, including near misses
+- 7 synthetic financial-policy documents
+- 40 section-aware indexed chunks with the default settings
+- 4 retrieval configurations: BM25, vector, hybrid, and hybrid plus reranker
+- 2 prompt styles: basic and strict governance
+- Retrieval metrics: hit@k, MRR, rank-weighted contextual precision, contextual recall, and section recall
+- Answer metrics: faithfulness proxy, citation coverage and validity, hallucination risk, abstention accuracy, and answer correctness proxy
+- Separate retrieval and generation latency measurements after warm-up
+
+## Run locally
+
+Prerequisites: Python 3.11 or later.
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
-python -m alembic upgrade head
-python -m uvicorn src.enterprise.api:app --reload
+python -m pytest -q
+streamlit run app.py
 ```
 
-In a second terminal:
+Run a credential-free BM25 benchmark:
 
 ```powershell
-cd frontend
-npm ci
-npm run dev
+python -m src.evaluator --methods bm25 --top-k 3 --output-dir results/local_bm25
 ```
 
-Open `http://localhost:5173`. Choose **Load synthetic AML workspace**, then **Start baseline comparison**. No model credential is needed; the deterministic provider is the default.
-
-The same full flow can run from the command line against a fresh database:
+Run all retrieval configurations:
 
 ```powershell
-python -m scripts.demo_enterprise
+python -m src.evaluator --methods vector,bm25,hybrid,hybrid_reranker --top-k 3 --output-dir results/local_all
 ```
 
-Docker is the shortest integrated path:
+Vector and reranker paths may download configured SentenceTransformer models on first use.
+
+## Generation modes
+
+When `GEMINI_API_KEY` is absent, FinGenEval operates in retrieval-only mode. Retrieval metrics are computed, while answer-level metrics remain empty by design.
+
+When a Gemini key is configured, the harness records successful LLM responses, generation failures, generation latency, and the exact model name. Rate-limit waits are excluded from measured generation latency. Successful rows can be resumed after a partial run.
 
 ```powershell
-docker compose up --build
+$env:GEMINI_API_KEY="your-key"
+python -m src.evaluator --methods bm25 --top-k 3 --output-dir results/gemini_bm25
 ```
 
-Open `http://localhost:8080`. API documentation is at `http://localhost:8000/docs`.
+Reports never treat retrieval-only or failed-generation rows as measured answer quality.
 
-## Demo flow
+## Saved results
 
-1. Load the synthetic AML project, registered baseline/candidate, approved dataset, and release policy.
-2. Start the comparison. Each case queries the approved policy corpus through BM25 before the credential-free deterministic generator produces baseline and candidate responses. Local eager execution persists all six case results and their retrieved evidence.
-3. Open **Finding detail** to compare the correct 30-day baseline with the candidate's unsupported 45-day deadline and inspect the authoritative evidence identifier.
-4. Open **Release decision** to see every rule and the rules that caused `BLOCK`.
-5. Optionally record the synthetic compliance override; the computed decision remains immutable while the effective decision records the human action.
-6. Record remediation and rerun the failed case. The new version passes and the finding moves to `RESOLVED`.
-7. Generate the validation/handoff report. The database stores its object key and SHA-256 digest.
+Committed result folders are evidence from actual runs, not illustrative numbers:
 
-The interview script is in [portfolio-walkthrough.md](docs/portfolio-walkthrough.md).
+- `results/retrieval_only_topk3/` contains 180 retrieval-only rows across four retrieval methods.
+- `results/gemini_strict_topk3/` is a partial hosted-generation run with 19 successful LLM rows and 161 recorded generation errors. It must not be presented as a complete answer-quality benchmark.
 
-## Tests and engineering checks
+Each result folder contains the row-level CSV, run metadata, and a deterministic governance report.
+
+## Repository map
+
+- `app.py`: supported Streamlit engineering interface
+- `src/document_loader.py`: deterministic Markdown document loading
+- `src/chunking.py`: section-aware chunking
+- `src/retrievers.py`: BM25, vector, hybrid, and reranked retrieval
+- `src/llm.py`: optional Gemini generation, prompts, retries, and rate limiting
+- `src/metrics.py`: pure retrieval and answer metrics
+- `src/evaluator.py`: benchmark orchestration, timing, resume support, and saved runs
+- `src/report_generator.py`: deterministic summaries and deployment gates
+- `src/settings.py`: paths, models, weights, and thresholds
+- `data/docs/`: synthetic financial-policy corpus
+- `data/eval/test_questions.csv`: labeled evaluation dataset
+- `results/`: saved benchmark evidence
+- `tests/`: dataset, metric, evaluator, and regression tests
+
+### Experimental local governance prototype
+
+`src/enterprise/`, `frontend/`, `migrations/`, and the related enterprise documentation are retained as an experimental local prototype that consumes the same synthetic policy assets. They are not the canonical FinGenEval product path and are not evidence of a production deployment, multi-agent system, or validated enterprise scale. New work should not expand that prototype unless the repository scope is explicitly changed first.
+
+## Verification
 
 ```powershell
 python -m pytest -q
 python -m ruff check src tests
 python -m mypy src/enterprise
-python -m alembic upgrade head
-python -m alembic check
-
-cd frontend
-npm run lint
-npm test
-npm run build
 ```
 
-The credential-free end-to-end test covers project loading, baseline/candidate execution, the critical AML regression, `BLOCK`, reviewer override, audit history, remediation, targeted rerun, `PASS`, finding resolution, and report generation. Failure-mode coverage includes partial provider failure, invalid citations, unsupported deadlines, unauthorized roles, and cross-tenant access.
+Dataset tests verify that labeled sources and sections exist in the index, evidence facts occur in the labeled sections, unanswerable questions have no positive labels, and questions do not copy long evidence phrases.
 
-The CI workflow adds formatting, type checking, dependency audits, Bandit, CodeQL, Gitleaks, container builds, Trivy, and migration validation.
+## Non-goals
 
-## Configuration
+- Serving end-user financial questions
+- Chat memory or conversational state
+- Autonomous agents or recursive delegation
+- Tool execution or business-process automation
+- Business-data dashboards
+- Claims of legal, regulatory, or production readiness
 
-Copy `.env.example` to `.env` and use placeholders only. Core enterprise settings:
-
-| Variable | Local default | Purpose |
-|---|---|---|
-| `FINGENEVAL_DATABASE_URL` | `sqlite:///.../fingeneval.db` | SQLAlchemy database URL |
-| `FINGENEVAL_EXECUTION_MODE` | `eager` | `eager` or local `threaded` execution |
-| `FINGENEVAL_LOCAL_AUTH_ENABLED` | `true` | Enables synthetic-user bootstrap; disable outside local development |
-| `FINGENEVAL_REPORT_DIR` | `reports/generated` | Local object-storage root |
-| `GEMINI_API_KEY` | unset | Optional legacy Gemini generation adapter |
-
-## Repository map
-
-- `src/enterprise/`: domain, policy engine, controlled agents, RAG-backed local provider, persistence, jobs, API, authorization, observability, reports
-- `frontend/`: accessible React/TypeScript workflow UI
-- `data/packs/`: reusable AML and complaint-handling evaluation packs
-- `src/`: preserved retrieval/evaluation harness
-- `tests/`: legacy and enterprise unit/integration/end-to-end tests
-- `migrations/`: Alembic database lifecycle
-- `docs/engagements/aml-assistant/`: forward-deployed discovery-to-handoff record
-- `patterns/`: reusable contracts and extension guidance
-- `deploy/`: reference deployment assets
-
-## Known limitations
-
-- Local authentication uses a synthetic `X-User-Id` boundary. Production requires OIDC/SAML validation, short-lived tokens, and centralized policy enforcement.
-- Tenant IDs and tenant-filtered queries are implemented; PostgreSQL row-level security and independent penetration testing remain required for true multi-tenant production.
-- Eager and threaded workers are development adapters. Production needs a durable queue, leases, heartbeats, distributed cancellation, and dead-letter recovery.
-- The local provider executes real BM25 retrieval but uses deterministic fixture generation so the workflow remains credential-free. It proves retrieval-to-governance integration, not production model quality. Production generation still needs an approved hosted-model adapter and calibrated semantic judging.
-- Local reports use the filesystem. S3-compatible storage, retention enforcement, legal hold, deletion verification, and tamper-evident audit export are documented production work.
-- The included load test is a configuration only; no scale result is claimed.
-- Generic project/dataset authoring is API/domain work in progress; the completed vertical slice loads the approved AML demonstration project.
-
-Prioritized remaining work is tracked in [docs/next-steps.md](docs/next-steps.md).
+Prioritized supported-harness work is tracked in [docs/next-steps.md](docs/next-steps.md).

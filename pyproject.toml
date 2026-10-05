@@ -1,7 +1,7 @@
 [project]
-name = "fingeneval-enterprise"
+name = "fingeneval"
 version = "0.1.0"
-description = "Agentic validation and release gating for financial AI systems"
+description = "Offline evaluation and release gating for financial RAG configurations"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]

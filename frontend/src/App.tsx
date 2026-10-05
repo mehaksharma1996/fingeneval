@@ -156,7 +156,7 @@ export default function App() {
           <div className="mark">FG</div>
           <div>
             <strong>FinGenEval</strong>
-            <small>Enterprise</small>
+            <small>Governance prototype</small>
           </div>
         </div>
         <nav aria-label="Product navigation">
@@ -411,7 +411,7 @@ export default function App() {
                 <div className="run-stats">
                   <span>{detail.case_results.length} cases</span>
                   <span>{regressions.length} regression</span>
-                  <span>{detail.agent_traces.length} agent traces</span>
+                  <span>{detail.agent_traces.length} workflow traces</span>
                   <span>
                     {detail.run.error_summary ?? "No provider errors"}
                   </span>
@@ -474,21 +474,29 @@ export default function App() {
                   <span className="label">Baseline response</span>
                   <p>{regressions[0]?.baseline_response.answer}</p>
                   <small>
-                    Retrieved via {regressions[0]?.baseline_response.retrieval_method ?? "unknown"}
+                    Retrieved via{" "}
+                    {regressions[0]?.baseline_response.retrieval_method ??
+                      "unknown"}
                   </small>
-                  {regressions[0]?.baseline_response.retrieved_evidence?.map((item) => (
-                    <code key={`baseline-${item}`}>{item}</code>
-                  ))}
+                  {regressions[0]?.baseline_response.retrieved_evidence?.map(
+                    (item) => (
+                      <code key={`baseline-${item}`}>{item}</code>
+                    ),
+                  )}
                 </div>
                 <div className="failed">
                   <span className="label">Candidate response</span>
                   <p>{regressions[0]?.candidate_response.answer}</p>
                   <small>
-                    Retrieved via {regressions[0]?.candidate_response.retrieval_method ?? "unknown"}
+                    Retrieved via{" "}
+                    {regressions[0]?.candidate_response.retrieval_method ??
+                      "unknown"}
                   </small>
-                  {regressions[0]?.candidate_response.retrieved_evidence?.map((item) => (
-                    <code key={`candidate-${item}`}>{item}</code>
-                  ))}
+                  {regressions[0]?.candidate_response.retrieved_evidence?.map(
+                    (item) => (
+                      <code key={`candidate-${item}`}>{item}</code>
+                    ),
+                  )}
                 </div>
               </div>
               <div className="evidence">

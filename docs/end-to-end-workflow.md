@@ -1,48 +1,58 @@
-# End-to-end workflow
+# End-to-end evaluation workflow
 
-FinGenEval Enterprise is the primary product path. It evaluates a registered baseline and release candidate against approved financial-policy cases; it does not serve end-user financial questions directly.
+FinGenEval has two supported entry points over the same offline evaluation engine: the Streamlit engineering UI and the evaluator CLI.
 
-## Runtime path
+## Benchmark lifecycle
 
-1. The React UI calls `POST /api/v1/demo/bootstrap` to create the synthetic tenant, users, project, baseline, candidate, approved documents, evaluation pack, and release policy.
-2. `POST /api/v1/projects/{project_id}/runs` binds the latest approved baseline, candidate, dataset, and policy into an immutable evaluation run.
-3. The dispatcher executes the run immediately in local `eager` mode or through the local thread adapter in `threaded` mode.
-4. For each approved case, the provider reads `input_text`, restricts the corpus to the case's approved source documents, chunks the Markdown policies, and retrieves the top BM25 evidence.
-5. The credential-free local generator returns a deterministic response only after retrieval. The synthetic candidate deliberately changes the SAR deadline from 30 to 45 days so the workflow contains one reproducible regression.
-6. Deterministic evaluation compares baseline and candidate answers, citations, required evidence, abstention behavior, and unsupported numeric claims. Each response persists its retrieval method and retrieved evidence IDs.
-7. Regressions become findings. The service aggregates completed case facts and passes them to the pure release-policy function.
-8. The policy produces `PASS`, `PASS_WITH_CONDITIONS`, `BLOCK`, or `INSUFFICIENT_EVIDENCE`. Controlled agent steps may summarize evidence, but they cannot alter this computed outcome.
-9. Authorized reviewers can append a review or override. Remediation creates a new candidate version and a targeted rerun linked to the original run.
-10. The final Markdown report records evidence, policy triggers, human actions, open risks, monitoring, rollback guidance, and a SHA-256 digest.
+1. Load and validate `data/eval/test_questions.csv`.
+2. Load the Markdown policies in `data/docs/` in deterministic filename order.
+3. Split documents into section-aware chunks that retain source and heading provenance.
+4. Build BM25 immediately and initialize vector/reranker models only when requested.
+5. Warm every selected retrieval method so model startup is excluded from latency.
+6. For every question, retrieval method, and prompt style:
+   - retrieve top-k evidence;
+   - record retrieval latency and ranked evidence identifiers;
+   - return retrieval-only output when Gemini is not configured, or attempt generation when it is;
+   - calculate retrieval metrics and, only for successful generation, answer metrics.
+7. Aggregate configurations and apply deterministic deployment gates.
+8. Save the row-level CSV, run metadata, and Markdown report when an output directory is supplied.
 
-## Local execution
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements-dev.txt
-python -m alembic upgrade head
-python -m uvicorn src.enterprise.api:app --reload
-```
-
-In a second terminal:
+## Streamlit path
 
 ```powershell
-cd frontend
-npm ci
-npm run dev
+streamlit run app.py
 ```
 
-Open `http://localhost:5173`, load the synthetic AML workspace, and start the baseline comparison. The finding detail displays the retrieved evidence used for both responses.
+The UI offers:
 
-For a UI-free smoke test:
+- Query Inspector for evidence and claim checks
+- Retrieval Comparison across all four methods
+- Benchmark execution over the labeled dataset
+- Validation Report rendering and downloads
+
+The UI is an engineering surface, not a conversational assistant or business dashboard.
+
+## CLI path
 
 ```powershell
-python -m scripts.demo_enterprise
+python -m src.evaluator --methods bm25 --top-k 3 --output-dir results/local_bm25
 ```
 
-The expected sequence is an initial `BLOCK`, a verified targeted remediation, a rerun `PASS`, and a generated report object with a content digest.
+Multiple methods can be supplied as a comma-separated list. `--resume-from` reuses only successful LLM rows from a compatible prior CSV; failed rows are executed again.
 
-## Relationship to the Streamlit benchmark
+## Generation behavior
 
-`app.py` remains a separate engineering interface for exploring queries and benchmarking BM25, vector, hybrid, and reranked retrieval across `data/eval/test_questions.csv`. Both applications share the same document loading, chunking, and retrieval modules. The React/FastAPI workflow adds versioned systems, tenant ownership, findings, release policy, human review, remediation, audit history, and reports.
+- Without `GEMINI_API_KEY`, rows use `retrieval_only` mode and answer-level metrics remain empty.
+- Successful hosted generation uses `llm` mode.
+- Provider failures use `generation_error` mode and answer-level metrics remain empty.
+- Daily quota exhaustion stops additional hosted calls rather than repeatedly failing.
+
+## Output contract
+
+Each saved run contains:
+
+- `evaluation_results.csv`: one row per question, retrieval method, and prompt style
+- `run_metadata.json`: dataset fingerprint, configuration, models, row modes, and counts
+- `governance_report.md`: deterministic summaries, gates, risks, and recommendation
+
+The experimental FastAPI/React governance prototype is outside this supported workflow.

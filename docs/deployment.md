@@ -1,10 +1,12 @@
-# Deployment
+# Experimental prototype deployment notes
+
+> **Status:** These notes apply only to the frozen local governance prototype. The supported FinGenEval harness runs offline through Streamlit or the CLI. The cloud table below is an unvalidated mapping, not a deployed environment.
 
 ## Local
 
 `docker compose up --build` starts the API with a persistent SQLite volume and the frontend on port 8080. This path is for development and demonstrations.
 
-## Production reference on AWS
+## Unvalidated AWS service mapping
 
 | Local component | Managed mapping |
 |---|---|
@@ -32,4 +34,3 @@ Set `FINGENEVAL_LOCAL_AUTH_ENABLED=false`. Supply the database URL and provider 
 Workers claim idempotent case tasks from a durable queue. Partition by run and tenant, batch provider requests where supported, cache content-addressed embeddings within tenant boundaries, persist progress, and apply provider-specific rate limits. Horizontally scale API and workers independently. Archive old immutable results to lower-cost object storage while retaining searchable decision metadata.
 
 No production-scale benchmark has been run. `load/k6-smoke.js` checks readiness under a small local load and must not be presented as capacity evidence.
-

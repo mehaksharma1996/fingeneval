@@ -1,4 +1,6 @@
-# Responsible AI assessment
+# Experimental governance-prototype responsible AI assessment
+
+> **Status:** Historical assessment for the frozen synthetic prototype. The canonical FinGenEval product is the offline evaluation harness and does not execute autonomous agents or tools.
 
 ## Intended use
 
@@ -10,7 +12,7 @@ The platform must not provide financial, legal, regulatory, or compliance advice
 
 ## Human oversight
 
-Approved users own datasets, release policies, severity, and final actions. AI-generated test proposals remain drafts. Agents summarize and recommend; deterministic rules compute the gate. An override requires an authorized reviewer, a substantive justification, timestamp, and audit event. Reviewers see baseline/candidate responses, expected behavior, evidence, metrics, likely failure stage, and limitations.
+Approved prototype users own datasets, release policies, severity, and final actions. AI-generated test proposals remain drafts. Deterministic helper steps may summarize evidence, while deterministic rules compute the gate. An override requires an authorized reviewer, a substantive justification, timestamp, and audit event. Reviewers see baseline/candidate responses, expected behavior, evidence, metrics, likely failure stage, and limitations.
 
 ## Risk classification
 
@@ -27,4 +29,3 @@ The deterministic local provider proves workflow mechanics only. The original le
 ## Provider risks
 
 Provider behavior, model versions, regions, retention, safety controls, outages, and prices can change. Pin versions where supported, record provider request IDs, limit sensitive inputs, validate outputs, use contractual/privacy review, implement circuit breakers and budgets, and preserve a credential-free local path.
-

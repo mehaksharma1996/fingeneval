@@ -1,4 +1,6 @@
-# API guide
+# Experimental governance-prototype API
+
+> **Status:** This API is retained as a local experimental consumer of the FinGenEval assets. It is not the supported offline-harness entry point and is not evidence of a production or multi-agent deployment.
 
 Interactive OpenAPI documentation is served at `/docs`; the machine-readable schema is `/openapi.json`. All business endpoints are versioned under `/api/v1`.
 
@@ -19,4 +21,3 @@ Local development authenticates with `X-User-Id`, returned by `POST /api/v1/demo
 Run creation is idempotent within a tenant. Eager local mode completes before the 202 response; threaded mode returns queued state and clients poll `GET /runs/{id}`. Production should add server-sent events and signed completion webhooks backed by an outbox.
 
 Errors use `{code, message, correlation_id, details}`. Cross-tenant and unknown identifiers both return `404` to reduce resource probing. Validation returns `422`; missing/invalid identity `401`; insufficient role `403`; lifecycle conflict `409`.
-

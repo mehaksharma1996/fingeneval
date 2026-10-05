@@ -832,7 +832,7 @@ class EnterpriseService:
         )
         triggered = [item for item in decision.rule_results if item["triggered"]]
         lines = [
-            "# FinGenEval Enterprise Validation and Handoff Report",
+            "# FinGenEval Governance Prototype Validation and Handoff Report",
             "",
             "> Synthetic demonstration. This report is not legal, regulatory, compliance, or financial advice.",
             "",

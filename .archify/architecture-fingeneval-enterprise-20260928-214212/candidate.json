@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FinGenEval - Offline RAG Evaluation Harness",
+    "locale": "en",
+    "output": ".archify/architecture-fingeneval-enterprise-20260928-214212/fingeneval-enterprise.html",
+    "animation": "none",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/mehaksharma1996/fingeneval.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "adb315ace7b947cc44b62e93f3d4e62c0a81ac95"
+    },
+    "views": [
+      {
+        "id": "benchmark_path",
+        "label": "Benchmark path",
+        "focus": ["evaluator", "streamlit", "cli", "evaluation_engine", "retrieval", "generation", "metrics", "report", "artifacts"],
+        "note": "Follow either supported entry point through retrieval, optional generation, deterministic scoring, and saved evidence."
+      },
+      {
+        "id": "retrieval_inputs",
+        "label": "Retrieval inputs",
+        "focus": ["evaluation_engine", "labeled_questions", "retrieval", "policy_corpus"],
+        "note": "Inspect how labeled questions and provenance-preserving policy chunks feed the shared retrieval engine."
+      },
+      {
+        "id": "generation_modes",
+        "label": "Generation modes",
+        "focus": ["retrieval", "generation", "gemini", "metrics"],
+        "note": "Gemini is optional; retrieval-only and generation-error rows keep answer-level metrics empty."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "evaluator",
+      "type": "external",
+      "label": "Evaluator",
+      "sublabel": "inspect, compare, benchmark, validate",
+      "pos": [20, 320],
+      "size": [170, 76]
+    },
+    {
+      "id": "streamlit",
+      "type": "frontend",
+      "label": "Streamlit UI",
+      "sublabel": "query inspector and benchmark",
+      "tag": "supported entry point",
+      "pos": [230, 190],
+      "size": [200, 78],
+      "sources": [
+        { "path": "app.py", "line": 68, "end_line": 144, "label": "inspection and benchmark tabs" },
+        { "path": "app.py", "line": 168, "end_line": 207, "label": "report and application entry" }
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "Evaluator CLI",
+      "sublabel": "reproducible batch execution",
+      "tag": "supported entry point",
+      "pos": [230, 450],
+      "size": [200, 78],
+      "sources": [
+        { "path": "src/evaluator.py", "line": 228, "end_line": 256, "label": "CLI arguments and execution" }
+      ]
+    },
+    {
+      "id": "evaluation_engine",
+      "type": "backend",
+      "label": "Evaluation Engine",
+      "sublabel": "warm, execute, time, resume",
+      "pos": [520, 320],
+      "size": [210, 80],
+      "sources": [
+        { "path": "src/evaluator.py", "line": 33, "end_line": 73, "label": "shared retrieval engine" },
+        { "path": "src/evaluator.py", "line": 91, "end_line": 201, "label": "row and benchmark orchestration" }
+      ]
+    },
+    {
+      "id": "labeled_questions",
+      "type": "database",
+      "label": "Labeled Questions",
+      "sublabel": "45 questions and evidence labels",
+      "tag": "CSV",
+      "pos": [520, 80],
+      "size": [210, 74],
+      "sources": [
+        { "path": "src/evaluator.py", "line": 76, "end_line": 88, "label": "dataset validation and fingerprint" },
+        { "path": "data/eval/test_questions.csv", "line": 1, "end_line": 46, "label": "evaluation dataset" }
+      ]
+    },
+    {
+      "id": "retrieval",
+      "type": "backend",
+      "label": "Retrieval Configurations",
+      "sublabel": "BM25, vector, hybrid, reranked",
+      "tag": "top-k evidence",
+      "pos": [860, 320],
+      "size": [220, 80],
+      "sources": [
+        { "path": "src/retrievers.py", "line": 70, "end_line": 189, "label": "retrieval implementations" },
+        { "path": "src/evaluator.py", "line": 33, "end_line": 73, "label": "method dispatch and warm-up" }
+      ]
+    },
+    {
+      "id": "policy_corpus",
+      "type": "database",
+      "label": "Policy Corpus",
+      "sublabel": "7 Markdown documents, 40 chunks",
+      "tag": "source + section provenance",
+      "pos": [860, 80],
+      "size": [220, 74],
+      "sources": [
+        { "path": "src/document_loader.py", "line": 33, "end_line": 48, "label": "deterministic document loading" },
+        { "path": "src/chunking.py", "line": 75, "end_line": 98, "label": "section-aware chunking" }
+      ]
+    },
+    {
+      "id": "generation",
+      "type": "backend",
+      "label": "Answer Generation",
+      "sublabel": "strict/basic prompt or retrieval-only",
+      "pos": [860, 600],
+      "size": [230, 80],
+      "sources": [
+        { "path": "src/llm.py", "line": 96, "end_line": 127, "label": "context and prompt construction" },
+        { "path": "src/llm.py", "line": 211, "end_line": 225, "label": "generation mode selection" }
+      ]
+    },
+    {
+      "id": "gemini",
+      "type": "external",
+      "label": "Gemini",
+      "sublabel": "optional hosted generation",
+      "tag": "GEMINI_API_KEY",
+      "pos": [450, 600],
+      "size": [190, 74],
+      "sources": [
+        { "path": "src/llm.py", "line": 130, "end_line": 152, "label": "client and model call" },
+        { "path": "src/llm.py", "line": 163, "end_line": 208, "label": "quota and retry behavior" }
+      ]
+    },
+    {
+      "id": "metrics",
+      "type": "backend",
+      "label": "Deterministic Metrics",
+      "sublabel": "retrieval, grounding, citations, abstention",
+      "tag": "pure functions",
+      "pos": [1240, 600],
+      "size": [230, 80],
+      "sources": [
+        { "path": "src/evaluator.py", "line": 106, "end_line": 144, "label": "row metric contract" },
+        { "path": "src/metrics.py", "line": 127, "end_line": 315, "label": "retrieval and answer metrics" }
+      ]
+    },
+    {
+      "id": "report",
+      "type": "security",
+      "label": "Report and Run Writer",
+      "sublabel": "gates, CSV, metadata, Markdown",
+      "tag": "deterministic",
+      "pos": [1240, 320],
+      "size": [230, 80],
+      "sources": [
+        { "path": "src/report_generator.py", "line": 101, "end_line": 169, "label": "gate evaluation" },
+        { "path": "src/report_generator.py", "line": 261, "end_line": 320, "label": "report and recommendation" },
+        { "path": "src/evaluator.py", "line": 215, "end_line": 225, "label": "artifact persistence" }
+      ]
+    },
+    {
+      "id": "artifacts",
+      "type": "database",
+      "label": "Run Artifacts",
+      "sublabel": "CSV, metadata, Markdown report",
+      "tag": "results/",
+      "pos": [1240, 60],
+      "size": [230, 74],
+      "sources": [
+        { "path": "src/evaluator.py", "line": 215, "end_line": 225, "label": "artifact persistence" }
+      ]
+    }
+  ],
+  "connections": [
+    { "id": "evaluator_ui", "from": "evaluator", "to": "streamlit", "label": "interactive analysis", "variant": "emphasis" },
+    { "id": "evaluator_cli", "from": "evaluator", "to": "cli", "label": "batch benchmark", "variant": "emphasis" },
+    { "id": "ui_engine", "from": "streamlit", "to": "evaluation_engine", "label": "run selected configurations", "variant": "emphasis" },
+    { "id": "cli_engine", "from": "cli", "to": "evaluation_engine", "label": "methods, prompts, top-k", "variant": "emphasis" },
+    { "id": "engine_questions", "from": "evaluation_engine", "to": "labeled_questions", "label": "load and validate labels", "fromSide": "top", "toSide": "bottom" },
+    { "id": "engine_retrieval", "from": "evaluation_engine", "to": "retrieval", "label": "search each question", "variant": "emphasis" },
+    { "id": "retrieval_corpus", "from": "retrieval", "to": "policy_corpus", "label": "load, chunk, and index", "fromSide": "top", "toSide": "bottom" },
+    { "id": "retrieval_generation", "from": "retrieval", "to": "generation", "label": "ranked evidence", "variant": "emphasis" },
+    { "id": "generation_gemini", "from": "generation", "to": "gemini", "label": "call only when configured", "variant": "dashed", "fromSide": "left", "toSide": "right" },
+    { "id": "generation_metrics", "from": "generation", "to": "metrics", "label": "answer mode and evidence", "variant": "emphasis" },
+    { "id": "metrics_report", "from": "metrics", "to": "report", "label": "measured configuration summaries", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+    { "id": "report_artifacts", "from": "report", "to": "artifacts", "label": "persist run bundle", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Supported scope",
+      "items": [
+        "The Streamlit UI and CLI share one offline evaluation engine.",
+        "The harness evaluates financial-policy RAG configurations; it does not serve end-user questions.",
+        "Agents, tool execution, chat memory, and business dashboards are explicit non-goals."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Measurement integrity",
+      "items": [
+        "Retrieval metrics are measured independently of hosted generation.",
+        "Answer metrics exist only for successful LLM rows; retrieval-only and failed rows remain empty.",
+        "Retrieval and generation latency are separated after method warm-up."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Repository boundary",
+      "items": [
+        "The FastAPI/React governance prototype is retained but is not the canonical product path.",
+        "Cloud and production-scale capabilities are not claimed by this supported architecture."
+      ]
+    }
+  ]
+}

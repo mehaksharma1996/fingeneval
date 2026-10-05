@@ -1,4 +1,6 @@
-# Business case
+# Experimental governance-prototype business case
+
+> **Status:** Historical design material for the frozen local governance prototype. It is not the supported FinGenEval product scope and contains no measured customer or production claim.
 
 ## Target users and buyer map
 
@@ -37,4 +39,3 @@ All demo measurements are synthetic or simulated.
 ## Build versus buy
 
 Buy general experiment tracking, observability, identity, secrets, databases, queues, and object storage where mature managed services exist. Build the institution-specific release ontology, risk-weighted packs, deterministic policy rules, evidence display, approval workflow, and integration adapters. A commercial evaluation platform may replace parts of the stack if it supports immutable comparison runs, tenant entitlements, explainable gates, custom financial-risk cases, and exportable audit history.
-

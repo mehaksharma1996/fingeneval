@@ -1,4 +1,6 @@
-# Operations runbook
+# Experimental governance-prototype operations runbook
+
+> **Status:** Proposed operating notes for the frozen local prototype. The objectives are unvalidated targets and do not describe the supported offline harness or a deployed service.
 
 ## Service objectives
 
@@ -11,7 +13,7 @@ Proposed starting objectives, subject to measured production demand: API availab
 - `/metrics` exposes HTTP counters and latency sums in Prometheus text format.
 - Logs include correlation ID, route, status, and duration without prompt/response content.
 - Runs carry IDs, status, stage, progress, timestamps, and error summaries.
-- Agent traces persist node, attempt, duration, validated output, and error.
+- Workflow traces persist step, attempt, duration, validated output, and error.
 
 ## Common incidents
 
@@ -36,4 +38,3 @@ Retain the registered baseline configuration and deployment artifact. If release
 ## Local recovery
 
 Stop the API, copy `fingeneval.db` and `reports/generated`, restart, call readiness, and inspect the latest runs. Do not delete partial runs; they are audit evidence. For a clean synthetic demo, use a new database path rather than mutating prior history.
-
